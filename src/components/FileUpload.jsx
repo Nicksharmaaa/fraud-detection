@@ -124,52 +124,75 @@ function FileUpload({ onUploadSuccess }) {
 
   return (
     <div className="file-upload">
-      <h3>Upload Transaction Data</h3>
-      <p className="upload-info">
-        Upload a JSON file containing transaction data for fraud analysis.
-      </p>
-      
-      <div className="upload-controls">
-        <input 
-          type="file" 
-          accept=".json" 
-          onChange={handleFileChange}
-          disabled={loading}
-          id="file-upload"
-          className="file-input"
-        />
-        <label htmlFor="file-upload" className="file-label">
-          {file ? file.name : 'Choose JSON File'}
-        </label>
-        
-        <button 
-          onClick={handleUpload} 
-          disabled={!file || loading}
-          className={file ? 'primary' : 'secondary'}
-        >
-          {loading ? 'Uploading...' : 'Upload Data'}
-        </button>
-      </div>
-      
-      {loading && (
-        <div className="progress-bar-container">
-          <div 
-            className="progress-bar" 
-            style={{ width: `${progress}%` }}
-          />
-          <span className="progress-text">{progress}%</span>
+      <div className="upload-container">
+        <div className="upload-header">
+          <div className="upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <div className="upload-title">
+            <h3>Upload Transaction Data</h3>
+            <p className="upload-info">
+              Upload a JSON file containing transaction data for fraud analysis.
+            </p>
+          </div>
         </div>
-      )}
-      
-      {error && (
-        <div className="error-message">{error}</div>
-      )}
+        
+        <div className="upload-controls">
+          <input 
+            type="file" 
+            accept=".json" 
+            onChange={handleFileChange}
+            disabled={loading}
+            id="file-upload"
+            className="file-input"
+          />
+          <label htmlFor="file-upload" className="file-label">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+            </svg>
+            {file ? file.name : 'Choose JSON File'}
+          </label>
+          
+          <button 
+            onClick={handleUpload} 
+            disabled={!file || loading}
+            className={file ? 'primary' : 'secondary'}
+          >
+            {loading ? 'Processing...' : 'Upload & Analyze'}
+            {!loading && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style={{marginLeft: '8px'}}>
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+            </svg>}
+            {loading && <div className="spinner"></div>}
+          </button>
+        </div>
+        
+        {loading && (
+          <div className="progress-bar-container">
+            <div 
+              className="progress-bar" 
+              style={{ width: `${progress}%` }}
+            />
+            <span className="progress-text">{progress}%</span>
+          </div>
+        )}
+        
+        {error && (
+          <div className="error-message">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
+      </div>
       
       {uploadResults && uploadResults.results && uploadResults.results.length > 0 && (
         <div className="upload-results">
-          <h4>Analysis Results:</h4>
-          <div className="results-summary">
-            <strong>Processed {uploadResults.processed_count} transactions</strong>
+          <div className="results-header">
+            <h4>Analysis Results</h4>
+            <span className="results-badge">{uploadResults.processed_count} Transactions</span>
           </div>
           <div className="results-table-container">
             <table className="results-table">
@@ -199,7 +222,12 @@ function FileUpload({ onUploadSuccess }) {
       )}
       
       <div className="file-format-help">
-        <h4>Expected JSON Format:</h4>
+        <div className="format-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+          </svg>
+          <h4>Expected JSON Format:</h4>
+        </div>
         <pre>
 {`[
   {
