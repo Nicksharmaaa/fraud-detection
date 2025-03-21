@@ -1,13 +1,37 @@
 import { useState } from "react";
+import Header from "./components/Header";
+import TransactionForm from "./components/TransactionForm";
+import Result from "./components/Result";
 import "./App.css";
 
 function App() {
-    const [transaction, setTransaction] = useState("");
+    const [transactionDetails, setTransactionDetails] = useState({
+        amount: "",
+        type: "Credit",
+        description: "",
+    });
     const [result, setResult] = useState(null);
+    const [error, setError] = useState("");
 
-    const handleCheck = () => {
-        // Dummy check: Mark transactions above 10000 as fraud (for demo)
-        if (parseFloat(transaction) > 10000) {
+    const validateAndCheckFraud = () => {
+        const { amount, description } = transactionDetails;
+
+        if (!amount || amount <= 0) {
+            setError("⚠ Please enter a valid transaction amount!");
+            setResult(null);
+            return;
+        }
+
+        if (!description.trim()) {
+            setError("⚠ Transaction description cannot be empty!");
+            setResult(null);
+            return;
+        }
+
+        setError("");
+
+        // Dummy Fraud Detection Logic: If amount > 10,000, consider it fraud
+        if (parseFloat(amount) > 10000) {
             setResult("🚨 Fraudulent Transaction Detected!");
         } else {
             setResult("✅ Transaction is Safe.");
@@ -16,18 +40,14 @@ function App() {
 
     return (
         <div className="container">
-            <h1>Fraud Transaction Detection</h1>
-            <p>Enter the transaction amount to check if it is fraudulent.</p>
-
-            <input
-                type="number"
-                placeholder="Enter Amount"
-                value={transaction}
-                onChange={(e) => setTransaction(e.target.value)}
+            <Header />
+            <TransactionForm
+                transactionDetails={transactionDetails}
+                setTransactionDetails={setTransactionDetails}
+                checkFraud={validateAndCheckFraud}
             />
-            <button onClick={handleCheck}>Check Transaction</button>
-
-            {result && <h2 className="result">{result}</h2>}
+            {error && <p className="error">{error}</p>}
+            <Result result={result} />
         </div>
     );
 }
