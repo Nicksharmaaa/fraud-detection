@@ -1,42 +1,74 @@
 import { useState } from "react";
-import axios from "axios";
 
-const TransactionForm = ({ setResult }) => {
-    const [transaction, setTransaction] = useState({
-        transaction_id: "",
+function TransactionForm({ setResult }) {
+    const [transactionDetails, setTransactionDetails] = useState({
         amount: "",
-        payer_id: "",
-        payee_id: "",
-        payment_mode: "",
-        transaction_channel: ""
+        type: "Credit",
+        description: "",
     });
 
-    const handleChange = (e) => {
-        setTransaction({ ...transaction, [e.target.name]: e.target.value });
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setTransactionDetails((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
 
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            try {
+                const jsonData = JSON.parse(e.target.result);
+                console.log("Parsed JSON:", jsonData);
+                sendToBackend(jsonData);
+            } catch (error) {
+                console.error("Invalid JSON file:", error);
+                alert("Invalid JSON file. Please upload a valid JSON.");
+            }
+        };
+
+        reader.readAsText(file);
+    };
+
+    const sendToBackend = async (jsonData) => {
         try {
-            const response = await axios.post("http://127.0.0.1:8000/detect_fraud", transaction);
-            setResult(response.data);
+            const response = await fetch("http://127.0.0.1:8000/detect_fraud", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(jsonData),
+            });
+
+            if (!response.ok) throw new Error("Failed to process transaction");
+
+            const data = await response.json();
+            setResult(data);
         } catch (error) {
-            console.error("Error detecting fraud:", error);
+            console.error("Error:", error);
+            alert("Error processing transaction.");
         }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <input type="text" name="transaction_id" placeholder="Transaction ID" onChange={handleChange} required />
-            <input type="number" name="amount" placeholder="Amount" onChange={handleChange} required />
-            <input type="text" name="payer_id" placeholder="Payer ID" onChange={handleChange} required />
-            <input type="text" name="payee_id" placeholder="Payee ID" onChange={handleChange} required />
-            <input type="text" name="payment_mode" placeholder="Payment Mode" onChange={handleChange} required />
-            <input type="text" name="transaction_channel" placeholder="Transaction Channel" onChange={handleChange} required />
-            <button type="submit">Check Fraud</button>
-        </form>
+        <div>
+            <h2>Transaction Form</h2>
+            <input
+                type="number"
+                name="amount"
+                value={transactionDetails.amount}
+                onChange={handleInputChange}
+                placeholder="Enter amount"
+            />
+            <input type="file" accept=".json" onChange={handleFileUpload} />
+            <button onClick={() => sendToBackend(transactionDetails)}>
+                Check Fraud
+            </button>
+        </div>
     );
-};
+}
 
 export default TransactionForm;

@@ -1,87 +1,104 @@
-import { useState } from "react";
-import Header from "./components/Header";
-import TransactionForm from "./components/TransactionForm";
-import Result from "./components/Result";
-import ReportFraud from "./components/ReportFraud";
-import UploadTransaction from "./components/UploadTransaction";
-import "./App.css";
+import { useState, useEffect } from 'react';
+import Header from './components/Header';
+import FileUpload from './components/FileUpload';
+import SingleFraudCheck from './components/SingleFraudCheck';
+import TransactionTable from './components/TransactionTable';
+import ComparisonGraph from './components/ComparisonGraph';
+import TimeSeriesGraph from './components/TimeSeriesGraph';
+import EvaluationMetrics from './components/EvaluationMetrics';
+import axios from 'axios';
+import './App.css';
+
+const API_URL = "http://127.0.0.1:8000";
 
 function App() {
-    const [transactionDetails, setTransactionDetails] = useState({
-        amount: "",
-        type: "Credit",
-        description: "",
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [filters, setFilters] = useState({ payerId: '', payeeId: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(null);
+  
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching transactions from:", `${API_URL}/transactions`);
+      const response = await axios.get(`${API_URL}/transactions`);
+      console.log("API Response:", response);
+      setTransactions(response.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      setError("Failed to load transaction data. Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadSuccess = (data) => {
+    setUploadSuccess({
+      message: `Successfully processed ${data.processed_count} transactions`,
+      timestamp: new Date().toLocaleTimeString()
     });
-    const [result, setResult] = useState(null);
-    const [batchResult, setBatchResult] = useState(null);
-    const [error, setError] = useState("");
+    fetchTransactions(); // Refresh the transaction list
+  };
 
-    const validateAndCheckFraud = async () => {
-        const { amount, description } = transactionDetails;
+  return (
+    <div className="app">
+      <Header />
+      <main className="dashboard">
+        <section className="dashboard-section upload-section">
+          <h2>Upload Transactions</h2>
+          <FileUpload onUploadSuccess={handleUploadSuccess} />
+          {uploadSuccess && (
+            <div className="success-message">
+              {uploadSuccess.message} at {uploadSuccess.timestamp}
+            </div>
+          )}
+        </section>
 
-        if (!amount || amount <= 0) {
-            setError("⚠ Please enter a valid transaction amount!");
-            setResult(null);
-            return;
-        }
+        <section className="dashboard-section check-section">
+          <h2>Fraud Check Tool</h2>
+          <SingleFraudCheck />
+        </section>
 
-        if (!description.trim()) {
-            setError("⚠ Transaction description cannot be empty!");
-            setResult(null);
-            return;
-        }
+        <section className="dashboard-section">
+          <h2>Transaction Data</h2>
+          <TransactionTable 
+            transactions={transactions} 
+            loading={loading}
+            error={error}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            filters={filters}
+            setFilters={setFilters}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
+        </section>
 
-        setError("");
+        <section className="dashboard-section">
+          <h2>Fraud Comparison</h2>
+          <ComparisonGraph transactions={transactions} />
+        </section>
 
-        // Send transaction details to FastAPI for fraud detection
-        try {
-            const transactionData = {
-                transaction_id: "TXN" + Math.floor(Math.random() * 100000), // Generate random ID
-                amount: parseFloat(amount),
-                payer_id: "payer123",
-                payee_id: "payee456",
-                payment_mode: "Credit Card",
-                transaction_channel: "Online",
-            };
+        <section className="dashboard-section">
+          <h2>Fraud Detection Trends</h2>
+          <TimeSeriesGraph transactions={transactions} />
+        </section>
 
-            const response = await fetch("http://127.0.0.1:8000/detect_fraud", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(transactionData),
-            });
-
-            const resultData = await response.json();
-            setResult(resultData);
-        } catch (error) {
-            setError("⚠ Error connecting to fraud detection service.");
-        }
-    };
-
-    return (
-        <div className="container">
-            <Header />
-            <h1>Fraud Transaction Detection</h1>
-
-            {/* Manual Transaction Form */}
-            <TransactionForm
-                transactionDetails={transactionDetails}
-                setTransactionDetails={setTransactionDetails}
-                checkFraud={validateAndCheckFraud}
-            />
-            {error && <p className="error">{error}</p>}
-            <Result result={result} />
-            {result && result.is_fraud && <ReportFraud transactionId={result.transaction_id} />}
-
-            {/* JSON File Upload for Batch Fraud Detection */}
-            <UploadTransaction setTransactionResult={setBatchResult} />
-            {batchResult && (
-                <div className="result">
-                    <h2>Batch Fraud Detection Result</h2>
-                    <pre>{JSON.stringify(batchResult, null, 2)}</pre>
-                </div>
-            )}
-        </div>
-    );
+        <section className="dashboard-section">
+          <h2>Model Evaluation</h2>
+          <EvaluationMetrics transactions={transactions} />
+        </section>
+      </main>
+    </div>
+  );
 }
 
 export default App;
