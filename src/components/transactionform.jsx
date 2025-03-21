@@ -1,33 +1,41 @@
-const TransactionForm = ({ transactionDetails, setTransactionDetails, checkFraud }) => {
+import { useState } from "react";
+import axios from "axios";
+
+const TransactionForm = ({ setResult }) => {
+    const [transaction, setTransaction] = useState({
+        transaction_id: "",
+        amount: "",
+        payer_id: "",
+        payee_id: "",
+        payment_mode: "",
+        transaction_channel: ""
+    });
+
+    const handleChange = (e) => {
+        setTransaction({ ...transaction, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await axios.post("http://127.0.0.1:8000/detect_fraud", transaction);
+            setResult(response.data);
+        } catch (error) {
+            console.error("Error detecting fraud:", error);
+        }
+    };
+
     return (
-        <div className="transaction-form">
-            <label>Transaction Amount (₹):</label>
-            <input
-                type="number"
-                placeholder="Enter Amount"
-                value={transactionDetails.amount}
-                onChange={(e) => setTransactionDetails({ ...transactionDetails, amount: e.target.value })}
-            />
-
-            <label>Transaction Type:</label>
-            <select
-                value={transactionDetails.type}
-                onChange={(e) => setTransactionDetails({ ...transactionDetails, type: e.target.value })}
-            >
-                <option value="Credit">Credit</option>
-                <option value="Debit">Debit</option>
-            </select>
-
-            <label>Description:</label>
-            <input
-                type="text"
-                placeholder="Enter Description"
-                value={transactionDetails.description}
-                onChange={(e) => setTransactionDetails({ ...transactionDetails, description: e.target.value })}
-            />
-
-            <button onClick={checkFraud}>Check Transaction</button>
-        </div>
+        <form onSubmit={handleSubmit}>
+            <input type="text" name="transaction_id" placeholder="Transaction ID" onChange={handleChange} required />
+            <input type="number" name="amount" placeholder="Amount" onChange={handleChange} required />
+            <input type="text" name="payer_id" placeholder="Payer ID" onChange={handleChange} required />
+            <input type="text" name="payee_id" placeholder="Payee ID" onChange={handleChange} required />
+            <input type="text" name="payment_mode" placeholder="Payment Mode" onChange={handleChange} required />
+            <input type="text" name="transaction_channel" placeholder="Transaction Channel" onChange={handleChange} required />
+            <button type="submit">Check Fraud</button>
+        </form>
     );
 };
 
